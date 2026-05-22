@@ -280,7 +280,7 @@ export function generateEnterprises(): Enterprise[] {
   const scalePool = ["¥800万", "¥2500万", "¥6000万", "¥1.8亿", "¥5.5亿", "¥12亿", "¥28亿", "$1500万", "$6000万", "$2.8亿", "$15亿"];
   const starsPool: ("⭐" | "⭐⭐" | "⭐⭐⭐")[] = ["⭐", "⭐⭐", "⭐⭐⭐"];
 
-  const totalToGenerate = 15881; // 15881 generated + 11 real anchors = 15,892 companies!
+  const totalToGenerate = 19950; // ~19950 generated + ~50 anchors = ~20,000 companies total!
 
   for (let i = 0; i < totalToGenerate; i++) {
     const seed = i + 101;
