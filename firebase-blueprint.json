@@ -1,0 +1,55 @@
+{
+  "entities": {
+    "UserPublic": {
+      "title": "User Public Profile",
+      "description": "Public profile of the user",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The firebase auth uid" },
+        "displayName": { "type": "string", "description": "The user's display name" },
+        "email": { "type": "string", "format": "email", "description": "The user's email address" },
+        "photoURL": { "type": "string", "description": "The user's photo or avatar URL" },
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "The user's system role" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last updated timestamp" }
+      },
+      "required": ["uid", "displayName", "email", "photoURL", "role", "createdAt", "updatedAt"]
+    },
+    "FavoriteCompany": {
+      "title": "Favorite Company",
+      "description": "User's favorited company link",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string", "description": "The unique ID of the company" },
+        "companyName": { "type": "string", "description": "The name of the company" },
+        "favoritedAt": { "type": "string", "format": "date-time", "description": "Favorite timestamp" }
+      },
+      "required": ["companyId", "companyName", "favoritedAt"]
+    },
+    "UserNote": {
+      "title": "User Note",
+      "description": "User's custom notes about a specific company",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string", "description": "The company this note is about" },
+        "content": { "type": "string", "description": "The markdown or text note content" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp of update" }
+      },
+      "required": ["companyId", "content", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserPublic",
+      "description": "Individual user accounts"
+    },
+    "/users/{userId}/favorites/{companyId}": {
+      "schema": "FavoriteCompany",
+      "description": "Favorited companies per user"
+    },
+    "/users/{userId}/notes/{companyId}": {
+      "schema": "UserNote",
+      "description": "Personalized research notes for companies"
+    }
+  }
+}

@@ -1,0 +1,125 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global safety net - default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validations
+
+    // UserPublic validation
+    function isValidUser(data) {
+      return data.uid is string && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.displayName is string && data.displayName.size() <= 200
+        && data.email is string && data.email.size() <= 200
+        && data.photoURL is string && data.photoURL.size() <= 2000
+        && data.role is string && (data.role == 'user' || data.role == 'admin')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        // Verify email matches auth token to avoid spoofing
+        && data.email == request.auth.token.email;
+    }
+
+    // FavoriteCompany validation
+    function isValidFavorite(data) {
+      return data.companyId is string && data.companyId.size() <= 128 && data.companyId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.companyName is string && data.companyName.size() <= 200
+        && data.favoritedAt is timestamp;
+    }
+
+    // UserNote validation
+    function isValidNote(data) {
+      return data.companyId is string && data.companyId.size() <= 128 && data.companyId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.content is string && data.content.size() <= 10000
+        && data.updatedAt is timestamp;
+    }
+
+    // User matching
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      // Deny full listings for general users to prevent PII harvesting
+      allow list: if false;
+
+      allow create: if isOwner(userId)
+        && isValidId(userId)
+        && isValidUser(incoming())
+        && incoming().uid == request.auth.uid
+        && (incoming().role == 'user' || (incoming().role == 'admin' && request.auth.token.email == '644094779@qq.com'))
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isOwner(userId)
+        && isValidId(userId)
+        && isValidUser(incoming())
+        && incoming().uid == request.auth.uid
+        && incoming().createdAt == existing().createdAt
+        && (incoming().role == existing().role || (incoming().role == 'admin' && request.auth.token.email == '644094779@qq.com'))
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt', 'role']);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Sub-collections are isolated to target userId owner
+      match /favorites/{companyId} {
+        allow get: if isOwner(userId) && isValidId(companyId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && isValidId(companyId)
+          && isValidFavorite(incoming())
+          && incoming().companyId == companyId
+          && incoming().favoritedAt == request.time;
+
+        allow update: if isOwner(userId)
+          && isValidId(companyId)
+          && isValidFavorite(incoming())
+          && incoming().companyId == companyId
+          && incoming().favoritedAt == existing().favoritedAt;
+
+        allow delete: if isOwner(userId) && isValidId(companyId);
+      }
+
+      match /notes/{companyId} {
+        allow get: if isOwner(userId) && isValidId(companyId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && isValidId(companyId)
+          && isValidNote(incoming())
+          && incoming().companyId == companyId
+          && incoming().updatedAt == request.time;
+
+        allow update: if isOwner(userId)
+          && isValidId(companyId)
+          && isValidNote(incoming())
+          && incoming().companyId == companyId
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['content', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(companyId);
+      }
+    }
+  }
+}

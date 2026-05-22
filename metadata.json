@@ -1,0 +1,6 @@
+{
+  "name": "全球机器人产业全景数据库",
+  "description": "2026年全球机器人产业全景数据库，涵盖人形二足、四足、协作、服务、手术、无人机、智控算力、数据训练等多维核心数据与产业链分析。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
